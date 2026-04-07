@@ -1,0 +1,570 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>DILLZY — Live Stream</title>
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:wght@300;400;500;700&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #0a0c10;
+    --surface: #111318;
+    --surface2: #181c23;
+    --accent: #3b82f6;
+    --accent2: #60a5fa;
+    --glow: rgba(59,130,246,0.35);
+    --red: #ef4444;
+    --text: #f0f4ff;
+    --muted: #6b7280;
+    --border: rgba(255,255,255,0.07);
+  }
+
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    font-family: 'DM Sans', sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 0 0 60px;
+    overflow-x: hidden;
+  }
+
+  /* ─── BG GRID ─── */
+  body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background-image:
+      linear-gradient(var(--border) 1px, transparent 1px),
+      linear-gradient(90deg, var(--border) 1px, transparent 1px);
+    background-size: 40px 40px;
+    pointer-events: none;
+    z-index: 0;
+  }
+  body::after {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background: radial-gradient(ellipse 80% 60% at 50% 0%, rgba(59,130,246,0.12) 0%, transparent 70%);
+    pointer-events: none;
+    z-index: 0;
+  }
+
+  /* ─── NAV BAR ─── */
+  .navbar {
+    position: relative;
+    z-index: 10;
+    width: 100%;
+    max-width: 520px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 20px 20px 0;
+  }
+
+  .logo {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 32px;
+    letter-spacing: 4px;
+    background: linear-gradient(135deg, #fff 30%, var(--accent2));
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    text-shadow: none;
+    position: relative;
+  }
+  .logo::after {
+    content: 'LIVE';
+    position: absolute;
+    top: -4px;
+    right: -36px;
+    font-family: 'DM Sans', sans-serif;
+    font-size: 9px;
+    font-weight: 700;
+    letter-spacing: 1px;
+    background: var(--red);
+    -webkit-background-clip: unset;
+    -webkit-text-fill-color: #fff;
+    background-clip: unset;
+    color: #fff;
+    padding: 2px 5px;
+    border-radius: 4px;
+    animation: pulse-badge 1.5s infinite;
+  }
+  @keyframes pulse-badge {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.5; }
+  }
+
+  .nav-dot {
+    width: 8px; height: 8px;
+    background: var(--red);
+    border-radius: 50%;
+    box-shadow: 0 0 8px var(--red);
+    animation: pulse-badge 1.5s infinite;
+  }
+
+  /* ─── MAIN CONTAINER ─── */
+  .container {
+    position: relative;
+    z-index: 5;
+    width: 100%;
+    max-width: 520px;
+    padding: 20px;
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+  }
+
+  /* ─── PLAYER ─── */
+  .player-wrap {
+    position: relative;
+    width: 100%;
+    padding-top: 56.25%;
+    border-radius: 16px;
+    overflow: hidden;
+    background: #000;
+    box-shadow:
+      0 0 0 1px var(--border),
+      0 0 40px var(--glow),
+      0 24px 48px rgba(0,0,0,0.6);
+  }
+  .player-wrap::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    z-index: 2;
+    border-radius: 16px;
+    box-shadow: inset 0 0 0 1.5px rgba(59,130,246,0.3);
+    pointer-events: none;
+  }
+  .player-wrap iframe,
+  .player-wrap #player-container {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    border: none;
+    z-index: 1;
+  }
+
+  .player-label {
+    position: absolute;
+    top: 12px;
+    left: 12px;
+    z-index: 3;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    background: rgba(0,0,0,0.7);
+    backdrop-filter: blur(6px);
+    border: 1px solid var(--border);
+    border-radius: 20px;
+    padding: 4px 10px;
+    font-size: 11px;
+    font-weight: 600;
+    letter-spacing: 1px;
+    color: var(--accent2);
+    text-transform: uppercase;
+  }
+  .player-label span {
+    width: 6px; height: 6px;
+    background: var(--red);
+    border-radius: 50%;
+    animation: pulse-badge 1.5s infinite;
+  }
+
+  /* ─── ERROR ─── */
+  .error-box {
+    display: none;
+    background: rgba(239,68,68,0.12);
+    border: 1px solid rgba(239,68,68,0.35);
+    color: #fca5a5;
+    border-radius: 12px;
+    padding: 14px 18px;
+    font-size: 14px;
+    font-weight: 500;
+    text-align: center;
+  }
+
+  /* ─── DIVIDER ─── */
+  .divider {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    color: var(--muted);
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: 2px;
+  }
+  .divider::before, .divider::after {
+    content: '';
+    flex: 1;
+    height: 1px;
+    background: var(--border);
+  }
+
+  /* ─── CARDS ─── */
+  .card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    padding: 18px;
+    backdrop-filter: blur(8px);
+  }
+
+  .card-title {
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--muted);
+    text-transform: uppercase;
+    letter-spacing: 1.5px;
+    margin-bottom: 14px;
+  }
+
+  /* ─── COMMUNITY BTN ─── */
+  .community-btn {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    background: linear-gradient(135deg, #1d2b4a, #162038);
+    border: 1px solid rgba(59,130,246,0.25);
+    border-radius: 14px;
+    padding: 14px 18px;
+    color: #fff;
+    font-family: 'DM Sans', sans-serif;
+    font-size: 15px;
+    font-weight: 600;
+    text-decoration: none;
+    cursor: pointer;
+    transition: all 0.25s ease;
+    position: relative;
+    overflow: hidden;
+  }
+  .community-btn::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(135deg, rgba(59,130,246,0.15), transparent);
+    opacity: 0;
+    transition: opacity 0.25s;
+  }
+  .community-btn:hover::before { opacity: 1; }
+  .community-btn:hover {
+    border-color: rgba(59,130,246,0.55);
+    transform: translateY(-1px);
+    box-shadow: 0 8px 24px rgba(59,130,246,0.2);
+  }
+
+  .community-btn .left {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+  .community-btn .icon-wrap {
+    width: 42px; height: 42px;
+    border-radius: 12px;
+    background: rgba(59,130,246,0.15);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+  }
+  .community-btn svg {
+    width: 22px; height: 22px;
+    fill: var(--accent2);
+  }
+  .community-btn .label { font-size: 15px; font-weight: 700; }
+  .community-btn .sublabel { font-size: 12px; color: var(--muted); font-weight: 400; margin-top: 1px; }
+  .community-btn .arrow {
+    width: 28px; height: 28px;
+    border-radius: 8px;
+    background: rgba(59,130,246,0.15);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+  }
+  .community-btn .arrow svg { width: 14px; height: 14px; fill: var(--accent2); }
+
+  /* ─── SHARE BTN ─── */
+  .share-btn {
+    width: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+    background: linear-gradient(135deg, var(--accent), #1d4ed8);
+    border: none;
+    border-radius: 14px;
+    padding: 15px;
+    color: #fff;
+    font-family: 'DM Sans', sans-serif;
+    font-size: 15px;
+    font-weight: 700;
+    cursor: pointer;
+    transition: all 0.25s ease;
+    box-shadow: 0 4px 20px rgba(59,130,246,0.35);
+    letter-spacing: 0.3px;
+  }
+  .share-btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 28px rgba(59,130,246,0.5);
+  }
+  .share-btn:active { transform: translateY(0); }
+  .share-btn svg { width: 18px; height: 18px; fill: #fff; }
+
+  .share-note {
+    text-align: center;
+    font-size: 11px;
+    color: var(--muted);
+    margin-top: 10px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 4px;
+  }
+  .share-note svg { width: 12px; height: 12px; fill: var(--muted); }
+
+  /* ─── FOOTER ─── */
+  .footer {
+    position: relative;
+    z-index: 5;
+    text-align: center;
+    font-size: 12px;
+    color: var(--muted);
+    margin-top: 8px;
+  }
+
+  /* ─── MODAL ─── */
+  .modal-overlay {
+    position: fixed;
+    inset: 0;
+    z-index: 100;
+    background: rgba(0,0,0,0.75);
+    backdrop-filter: blur(10px);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 20px;
+    animation: fadeIn 0.2s ease;
+  }
+  @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+
+  .modal {
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 20px;
+    padding: 28px 24px;
+    width: 100%;
+    max-width: 340px;
+    text-align: center;
+    box-shadow: 0 32px 80px rgba(0,0,0,0.6), 0 0 60px var(--glow);
+    animation: slideUp 0.25s ease;
+  }
+  @keyframes slideUp { from { transform: translateY(20px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
+
+  .modal-icon {
+    width: 60px; height: 60px;
+    background: rgba(59,130,246,0.12);
+    border: 1px solid rgba(59,130,246,0.25);
+    border-radius: 18px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin: 0 auto 16px;
+  }
+  .modal-icon svg { width: 30px; height: 30px; fill: var(--accent2); }
+  .modal h2 { font-family: 'Bebas Neue', sans-serif; font-size: 26px; letter-spacing: 2px; margin-bottom: 8px; }
+  .modal p { font-size: 14px; color: var(--muted); line-height: 1.6; margin-bottom: 22px; }
+
+  .modal-actions { display: flex; flex-direction: column; gap: 10px; }
+  .modal-primary {
+    background: linear-gradient(135deg, var(--accent), #1d4ed8);
+    border: none;
+    border-radius: 12px;
+    padding: 14px;
+    color: #fff;
+    font-family: 'DM Sans', sans-serif;
+    font-size: 15px;
+    font-weight: 700;
+    cursor: pointer;
+    transition: all 0.2s;
+    box-shadow: 0 4px 16px rgba(59,130,246,0.3);
+  }
+  .modal-primary:hover { transform: translateY(-1px); box-shadow: 0 6px 20px rgba(59,130,246,0.45); }
+
+  .modal-secondary {
+    background: transparent;
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 13px;
+    color: var(--muted);
+    font-family: 'DM Sans', sans-serif;
+    font-size: 14px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.2s;
+  }
+  .modal-secondary:hover { background: var(--surface); color: var(--text); }
+
+  /* Copied toast */
+  .toast {
+    position: fixed;
+    bottom: 30px;
+    left: 50%;
+    transform: translateX(-50%) translateY(20px);
+    background: #1a2a1a;
+    border: 1px solid #22c55e;
+    color: #86efac;
+    padding: 10px 20px;
+    border-radius: 30px;
+    font-size: 14px;
+    font-weight: 600;
+    z-index: 200;
+    opacity: 0;
+    transition: all 0.3s ease;
+    white-space: nowrap;
+  }
+  .toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+</style>
+</head>
+<body>
+
+<!-- MODAL -->
+<div class="modal-overlay" id="joinModal">
+  <div class="modal">
+    <div class="modal-icon">
+      <svg viewBox="0 0 24 24"><path d="M9.04 15.47l-.4 5.65c.57 0 .82-.25 1.13-.55l2.72-2.6 5.64 4.13c1.03.57 1.76.27 2.04-.95l3.7-17.37c.36-1.65-.6-2.3-1.6-1.92L1.66 9.74c-1.58.61-1.55 1.5-.27 1.9l5.58 1.74L19.46 5.6c.58-.36 1.1-.16.67.2"/></svg>
+    </div>
+    <h2>Join Telegram</h2>
+    <p>Get live stream links, updates &amp; more — straight to your Telegram.</p>
+    <div class="modal-actions">
+      <button class="modal-primary" id="modalJoin">Join Telegram Community</button>
+      <button class="modal-secondary" id="modalSkip">Already Joined</button>
+    </div>
+  </div>
+</div>
+
+<!-- TOAST -->
+<div class="toast" id="toast">✓ Link copied to clipboard</div>
+
+<!-- NAV -->
+<nav class="navbar">
+  <div class="logo">Run Machine</div>
+  <div class="nav-dot"></div>
+</nav>
+
+<!-- MAIN -->
+<div class="container">
+
+  <!-- PLAYER -->
+  <div class="player-wrap">
+    <div class="player-label"><span></span> Live Stream</div>
+    <div id="player-container"></div>
+  </div>
+
+  <!-- ERROR -->
+  <div class="error-box" id="errorBox">
+    ⚠ Invalid or unavailable stream ID. Please check the link.
+  </div>
+
+  <div class="divider">Community</div>
+
+  <!-- TELEGRAM CARD -->
+  <div class="card">
+    <div class="card-title">Stay Connected</div>
+    <a href="https://t.me/+I5FazFAJQyk1MzE1" class="community-btn" target="_blank">
+      <div class="left">
+        <div class="icon-wrap">
+          <svg viewBox="0 0 24 24"><path d="M9.04 15.47l-.4 5.65c.57 0 .82-.25 1.13-.55l2.72-2.6 5.64 4.13c1.03.57 1.76.27 2.04-.95l3.7-17.37c.36-1.65-.6-2.3-1.6-1.92L1.66 9.74c-1.58.61-1.55 1.5-.27 1.9l5.58 1.74L19.46 5.6c.58-.36 1.1-.16.67.2"/></svg>
+        </div>
+        <div>
+          <div class="label">Telegram Channel</div>
+          <div class="sublabel">Live updates & new stream links</div>
+        </div>
+      </div>
+      <div class="arrow">
+        <svg viewBox="0 0 24 24"><path d="M9 18l6-6-6-6" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" fill="none"/></svg>
+      </div>
+    </a>
+  </div>
+
+  <div class="divider">Share</div>
+
+  <!-- SHARE CARD -->
+  <div class="card">
+    <div class="card-title">Share This Stream</div>
+    <button class="share-btn" id="shareBtn">
+      <svg viewBox="0 0 24 24"><path d="M4 12v8a2 2 0 002 2h12a2 2 0 002-2v-8M16 6l-4-4-4 4M12 2v13" stroke="#fff" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" fill="none"/></svg>
+      Copy Stream Link
+    </button>
+    <div class="share-note">
+      <svg viewBox="0 0 24 24"><path d="M12 22c5.523 0 10-4.477 10-10S17.523 2 12 2 2 6.477 2 12s4.477 10 10 10zM12 8v4M12 16h.01" stroke="currentColor" stroke-width="2" stroke-linecap="round" fill="none"/></svg>
+      Best viewed in Chrome browser
+    </div>
+  </div>
+
+</div>
+
+<div class="footer">© 2025 DILLZY · All rights reserved</div>
+
+<script>
+document.addEventListener("DOMContentLoaded", function () {
+
+  // ─── MODAL ───
+  const modal = document.getElementById("joinModal");
+  document.getElementById("modalJoin").onclick = function () {
+    window.open("https://t.me/+I5FazFAJQyk1MzE1", "_blank");
+    modal.remove();
+  };
+  document.getElementById("modalSkip").onclick = function () {
+    modal.style.animation = "fadeOut 0.2s ease forwards";
+    setTimeout(() => modal.remove(), 200);
+  };
+
+  // ─── PLAYER ───
+  const params = new URLSearchParams(window.location.search);
+  const id = params.get("id");
+  const playerContainer = document.getElementById("player-container");
+  const errorBox = document.getElementById("errorBox");
+
+  if (!id) {
+    errorBox.style.display = "block";
+  } else {
+    fetch("https://allrounderid2.pages.dev/id.json")
+      .then(res => res.json())
+      .then(data => {
+        if (!data.iframes || !Array.isArray(data.iframes)) {
+          errorBox.style.display = "block";
+          return;
+        }
+        const match = data.iframes.find(item => item.id === id);
+        if (match && match.iframeSrc) {
+          playerContainer.innerHTML = `<iframe src="${match.iframeSrc}" allow="encrypted-media; autoplay" allowfullscreen></iframe>`;
+        } else {
+          errorBox.style.display = "block";
+        }
+      })
+      .catch(() => { errorBox.style.display = "block"; });
+  }
+
+  // ─── SHARE / COPY ───
+  const toast = document.getElementById("toast");
+  document.getElementById("shareBtn").onclick = function () {
+    navigator.clipboard.writeText(window.location.href).then(() => {
+      toast.classList.add("show");
+      setTimeout(() => toast.classList.remove("show"), 2500);
+    });
+  };
+
+});
+</script>
+
+</body>
+</html>
